@@ -15,7 +15,6 @@ const app = express();
 
 app.use(express.json())
 
-console.log(process.env.NODEMAILER_EMAIL)
 
 let otps = []
 
@@ -29,6 +28,7 @@ const userSchema = new Schema({
   scores: {type:JSON},
   level: Number,
 });
+
 
 
 const User = model("User", userSchema);
@@ -54,6 +54,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.NODEMAILER_PASS,
   },
 });
+
 function generateOtp() {
   let otp = "";
   for (let i = 0; i < 6; i++) {
@@ -62,42 +63,49 @@ function generateOtp() {
   return otp;
 }
 
+let id = setInterval(async()=>{
+    otps = otps.filter(i => new Date()-i.time <=30000)
+},60000)
+
+
 app.post("/sendotp", async (req, res) => {
   try {
       const {email} = req.body
-      let otp = generateOtp();
-      console.log(otp)
-      console.log(email)
-      
-      let x = otps.find((i)=>i.mail===email)
+      let otp = generateOtp()  
+     let x = otps.find((i)=>i.mail===email)
       if(x){
         x.otp = otp
+        x.time = new Date()
       }
       else{
-        otps.push({mail:email,otp:otp})
+        otps.push({mail:email,otp:otp,time:new Date()})
       } 
       const mailOptions = {
         from: process.env.NODEMAILER_EMAIL,
         to: email,
-        subject: "Password Reset",
+        subject: "OTP VERIFICATION",
         text: `Your OTP is ${otp}`,
       };
 
-      transporter.sendMail(mailOptions, (error, info) => {
+      await transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error(error);
+          line()
           return res.send({"otpstatus":0})
         } else {
-          console.log("Email sent: " + info.response);
+          console.log(`Email sent: ${email} ${otp} ` + info.response);
+          line()
           return res.send({"otpstatus":1})
         }
-      });
-      line()
+      })
+      
+     
     
   } catch (error) {
     console.error(error);
     line()
-    res.status(500).send("Internal Server Error");
+    return res.send({"otpstatus":-1})
+    
   }
 });
 
@@ -122,23 +130,41 @@ app.post("/verifyotp", async(req, res) => {
   catch(err){
     console.log(err)
     line()
+    return res.send({"otpverify":-1})
+    
   }
 });
 
-app.get("/login", (req, res) => {
-  console.log(req)
+app.post("/resetpass", async(req, res) => {
+    
+  try{
+ 
+  const{email,password} = req.body
+  let user = await User.findOne({email:email})
+  if(user){
+    user.password = await bcrypt.hash(password,10)
+    await user.save()
+    console.log(`${email} pass reset`)
+      line()
+    return res.send({"resetpassStatus":1})
+  }
+  else{
+    return res.send({"resetpassStatus":0})
+  }
+  }
+  catch(err){
+    console.log(err)
+    line()
+     return res.send({"resetpassStatus":-1})
+  }
 });
 
-app.get("/otps", (req, res) => {
-  res.send('adasdadsasd')
-});
 
 app.post("/signup", async(req, res) => {
     
   try{
 
   const{fname,lname,email,pno,password} = req.body
-  console.log(`${fname} ${lname} ${email} ${pno} ${password}`)
   let user = await User.findOne({email:email})
   if(user){
     return res.send({"signupStatus":0})
@@ -159,6 +185,8 @@ app.post("/signup", async(req, res) => {
   catch(err){
     console.log(err)
     line()
+    return res.send({"signupStatus":-1})
+    
   }
 });
 
@@ -181,12 +209,13 @@ app.get("/signin", async(req, res) => {
   else{
     return res.send({"signinStatus":-1})
   }
+  
   }
   catch(err){
     console.log(err)
     line()
+    return res.send({"signinStatus":-1})
   }
-
 });
 
 app.listen(port, (err) => {
