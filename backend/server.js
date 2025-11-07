@@ -24,8 +24,17 @@ const userSchema = new Schema({
   email: { type: String, unique: true },
   pno: { type: Number, unique: true },
 });
-const User = model("User", userSchema);
 
+const playerSchema = new Schema({
+  fname: String,
+  lname: String,
+  email: { type: String, unique: true },
+  score : Number,
+  sport : String,
+});
+
+const User = model("User", userSchema);
+const Player = model("Player", playerSchema);
 mongoose.connect(process.env.MONGO_URI, 
   {
   useNewUrlParser: true,
@@ -85,6 +94,29 @@ app.get("/sendotp", async (req, res) => {
   }
 });
 
+app.get("/verifyotp", async(req, res) => {
+    
+  try{
+  console.log(req.body)
+  const{email,otp} = req.body
+   let x = otps.find((i)=>i.mail===email)
+      if(x){
+       if(x.otp === otp){
+        res.send("Success")
+       }
+       else{
+        res.send("Invlaid otp")
+       }
+      }
+      else{
+        res.send("Invalid user")
+      } 
+  }
+  catch(err){
+    console.log(err)
+  }
+});
+
 app.get("/login", (req, res) => {
   console.log(req)
 });
@@ -116,7 +148,6 @@ app.get("/signup", async(req, res) => {
   catch(err){
     console.log(err)
   }
-
 });
 
 app.get("/signin", async(req, res) => {
@@ -129,8 +160,9 @@ app.get("/signin", async(req, res) => {
     res.send("user exists")
     let x = otps.find((i)=>i.mail===email)
       if(x){
-        x.otp === otp
-        res.send("success")
+        if(x.otp === otp){
+            res.send("success")
+        }
       }
       else{
         res.send("failed login")
@@ -145,7 +177,6 @@ app.get("/signin", async(req, res) => {
   }
 
 });
-
 
 app.listen(port, (err) => {
   if (err) {
