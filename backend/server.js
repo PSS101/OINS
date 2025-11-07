@@ -24,9 +24,9 @@ const userSchema = new Schema({
   email: { type: String, unique: true },
   password: String,
   pno: { type: Number, unique: true },
-  sports : {type:JSON },
-  scores: {type:JSON},
-  level: Number,
+  sports : {type:[String] ,default:["cricket"]},
+  scores: {type:mongoose.Schema.Types.Mixed,default:{cricket_scre:0}},
+  level: {type:Number , default:0},
 });
 
 
@@ -171,14 +171,14 @@ app.post("/signup", async(req, res) => {
   }
   else{
     const pass = await bcrypt.hash(password,10)
-    const user = new User({
-        fname:fname,
-        lname:lname,
-        email:email,
-        password:pass,
-        pno:pno,
-    })
-    await user.save()
+    const newUser = new User()
+        newUser.fname = fname
+        newUser.lname = lname
+        newUser.email = email
+        newUser.password = pass
+        newUser.pno = pno
+    
+    await newUser.save()
     return res.send({"signupStatus":1})
   }
   }
