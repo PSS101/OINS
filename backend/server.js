@@ -5,15 +5,16 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import nodemailer from "nodemailer";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import cors from 'cors'
 const { Schema, model } = mongoose;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const port = 3000;
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
+app.use(express.json())
+
 console.log(process.env.NODEMAILER_EMAIL)
 
 let otps = []
@@ -22,25 +23,27 @@ const userSchema = new Schema({
   fname: String,
   lname: String,
   email: { type: String, unique: true },
+  password: String,
   pno: { type: Number, unique: true },
+  sports : {type:JSON },
+  scores: {type:JSON},
+  level: Number,
 });
 
-const playerSchema = new Schema({
-  fname: String,
-  lname: String,
-  email: { type: String, unique: true },
-  score : Number,
-  sport : String,
-});
 
 const User = model("User", userSchema);
-const Player = model("Player", playerSchema);
+
+const line = ()=>{
+    console.log("-------------------------------------------------")
+}
+
 mongoose.connect(process.env.MONGO_URI, 
   {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB'))
+.then(() => {console.log('Connected to MongoDB')
+   line()})
 .catch(err => console.error('MongoDB connection error:', err));
 
 
@@ -51,7 +54,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.NODEMAILER_PASS,
   },
 });
-function otp_() {
+function generateOtp() {
   let otp = "";
   for (let i = 0; i < 6; i++) {
     otp += Math.floor(Math.random() * 10).toString();
@@ -59,11 +62,13 @@ function otp_() {
   return otp;
 }
 
-app.get("/sendotp", async (req, res) => {
+app.post("/sendotp", async (req, res) => {
   try {
-      let email = "saishanmukhapanidepu@gmail.com"
-      let otp = otp_();
+      const {email} = req.body
+      let otp = generateOtp();
       console.log(otp)
+      console.log(email)
+      
       let x = otps.find((i)=>i.mail===email)
       if(x){
         x.otp = otp
@@ -73,7 +78,7 @@ app.get("/sendotp", async (req, res) => {
       } 
       const mailOptions = {
         from: process.env.NODEMAILER_EMAIL,
-        to: "saishanmukhapanidepu@gmail.com",
+        to: email,
         subject: "Password Reset",
         text: `Your OTP is ${otp}`,
       };
@@ -81,20 +86,22 @@ app.get("/sendotp", async (req, res) => {
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error(error);
-          res.status(500).send("Failed to send OTP");
+          return res.send({"otpstatus":0})
         } else {
           console.log("Email sent: " + info.response);
-          res.send("Email sent")
+          return res.send({"otpstatus":1})
         }
       });
+      line()
     
   } catch (error) {
     console.error(error);
+    line()
     res.status(500).send("Internal Server Error");
   }
 });
 
-app.get("/verifyotp", async(req, res) => {
+app.post("/verifyotp", async(req, res) => {
     
   try{
   console.log(req.body)
@@ -102,18 +109,19 @@ app.get("/verifyotp", async(req, res) => {
    let x = otps.find((i)=>i.mail===email)
       if(x){
        if(x.otp === otp){
-        res.send("Success")
+        return res.send({"otpverify":1})
        }
        else{
-        res.send("Invlaid otp")
+        return res.send({"otpverify":0})
        }
       }
       else{
-        res.send("Invalid user")
+        return res.send({"otpverify":-1})
       } 
   }
   catch(err){
     console.log(err)
+    line()
   }
 });
 
@@ -122,58 +130,61 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/otps", (req, res) => {
-  res.send(otps)
+  res.send('adasdadsasd')
 });
 
-app.get("/signup", async(req, res) => {
+app.post("/signup", async(req, res) => {
     
   try{
-  console.log(req.body)
-  const{fname,lname,email,pno} = req.body
+
+  const{fname,lname,email,pno,password} = req.body
+  console.log(`${fname} ${lname} ${email} ${pno} ${password}`)
   let user = await User.findOne({email:email})
   if(user){
-    res.send("user exists")
+    return res.send({"signupStatus":0})
   }
   else{
+    const pass = await bcrypt.hash(password,10)
     const user = new User({
         fname:fname,
         lname:lname,
         email:email,
+        password:pass,
         pno:pno,
     })
     await user.save()
-    return res.send("User created")
+    return res.send({"signupStatus":1})
   }
   }
   catch(err){
     console.log(err)
+    line()
   }
 });
 
 app.get("/signin", async(req, res) => {
     
   try{
-  console.log(req.body)
-  const{email,otp} = req.body
+ 
+  const{email,password} = req.body
   let user = await User.findOne({email:email})
   if(user){
-    res.send("user exists")
-    let x = otps.find((i)=>i.mail===email)
+    
+    let x = await bcrypt.compare(password,user.password)
       if(x){
-        if(x.otp === otp){
-            res.send("success")
-        }
+        res.send({"signinStatus":1})
       }
       else{
-        res.send("failed login")
+        res.send({"signinStatus":0})
       }
   }
   else{
-    return res.send("failed login")
+    return res.send({"signinStatus":-1})
   }
   }
   catch(err){
     console.log(err)
+    line()
   }
 
 });
@@ -182,6 +193,7 @@ app.listen(port, (err) => {
   if (err) {
     console.error(err);
   } else {
+    line()
     console.log(`Server started at http://localhost:${port}`);
   }
 });
