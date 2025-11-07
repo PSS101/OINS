@@ -6,15 +6,19 @@ import { StyleSheet, Text, View,TextInput, TouchableOpacity ,SafeAreaView } from
 import { createStaticNavigation, NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import LoginScreen from './screens/LoginScreen';
+import CreateAccountScreen from './screens/CreateAccountScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>OINS</Text>
-
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="CreateAccountScreen" component={CreateAccountScreen} />
+    </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
