@@ -4,161 +4,132 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
 } from "react-native";
 
 export default function CreateAccountScreen({ navigation }) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSignUp = () => {
-    if (password !== confirmPassword) {
-      console.warn("Passwords do not match");
-      return;
+  const handleSignUp = async () => {
+    try {
+      console.log("Create account", {
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+      });
+
+      const response = await fetch(
+        "https://9d0c2b656a61.ngrok-free.app/signup",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fname: firstName,
+            lname: lastName,
+            email: email,
+            pno: phoneNumber,
+            password: password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      console.log(data);
+
+      navigation.navigate("OtpValidation", { email });
+    } catch (error) {
+      console.error(error);
     }
-
-    console.log("Create account", { name, email, password });
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      className="flex-1 bg-white"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join the OINS community</Text>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          paddingHorizontal: 20,
+          paddingVertical: 40,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="flex-1 justify-center">
+          <Text className="text-2xl font-bold text-gray-900 text-center mb-8">
+            Create Account
+          </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Full name</Text>
+          <View className="space-y-4">
             <TextInput
-              style={styles.input}
-              placeholder="Enter your full name"
-              value={name}
-              onChangeText={setName}
+              className="my-4 w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
             />
-          </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
+              className="mb-4 w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              autoCapitalize="words"
+            />
+
+            <TextInput
+              className="mb-4 w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
+
+            <TextInput
+              className="mb-4 w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
+              placeholder="Email Address"
               value={email}
               onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
-          </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Create a password"
-              secureTextEntry
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
+              placeholder="Password"
               value={password}
               onChangeText={setPassword}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Confirm password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Re-enter your password"
               secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
             />
           </View>
 
-          <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
-            <Text style={styles.primaryButtonText}>Create Account</Text>
+          <TouchableOpacity
+            className="bg-blue-600 rounded-xl py-4 items-center mt-8 mb-6"
+            onPress={handleSignUp}
+          >
+            <Text className="text-white text-base font-semibold">
+              Create Account
+            </Text>
           </TouchableOpacity>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+          <View className="flex-row justify-center">
+            <Text className="text-gray-500 mr-1">Already have an account?</Text>
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={styles.footerLink}>Sign in</Text>
+              <Text className="text-blue-600 font-semibold">Login</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 32,
-  },
-  fieldGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: "#374151",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: "#F9FAFB",
-  },
-  primaryButton: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginRight: 6,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: "#2563EB",
-    fontWeight: "600",
-  },
-});

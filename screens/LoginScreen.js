@@ -1,138 +1,73 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
+import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    console.log("Login attempt", { email, password });
+  const handleLogin = async () => {
+    try {
+      console.log("Attempting login with:", { email, password });
+
+      const response = await fetch(
+        "https://9d0c2b656a61.ngrok-free.app/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          }),
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+      console.log("Server response:", data);
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+    <View className="flex-1 p-5 justify-center bg-white">
+      <Text className="text-2xl font-bold text-gray-900 text-center mb-8">
+        Login
+      </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+      <TextInput
+        className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 bg-gray-50"
+        placeholder="Enter your email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
+      <TextInput
+        className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-6 bg-gray-50"
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
-          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-            <Text style={styles.primaryButtonText}>Sign In</Text>
-          </TouchableOpacity>
+      <TouchableOpacity
+        className="bg-blue-600 rounded-xl py-4 items-center mb-6"
+        onPress={handleLogin}
+      >
+        <Text className="text-white text-base font-semibold">Login</Text>
+      </TouchableOpacity>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("CreateAccount")}
-            >
-              <Text style={styles.footerLink}>Sign up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+      <View className="flex-row justify-center">
+        <Text className="text-gray-500 mr-1">Don't have an account?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("CreateAccount")}>
+          <Text className="text-blue-600 font-semibold">Create Account</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 32,
-  },
-  fieldGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: "#374151",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: "#F9FAFB",
-  },
-  primaryButton: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginRight: 6,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: "#2563EB",
-    fontWeight: "600",
-  },
-});
